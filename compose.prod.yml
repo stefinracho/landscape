@@ -15,8 +15,8 @@ services:
   cms:
     container_name: cms
     build:
-      context: ./apps/cms/
-      dockerfile: Dockerfile.prod
+      context: .
+      dockerfile: apps/cms/Dockerfile.prod
     restart: always
     command: npm run start
     environment:

@@ -1,7 +1,9 @@
 services:
   cms:
     container_name: cms
-    build: .
+    build:
+      context: ../../
+      dockerfile: apps/cms/Dockerfile
     image: cms:latest
     restart: unless-stopped
     env_file: .env
@@ -16,12 +18,12 @@ services:
       DATABASE_PASSWORD: ${DATABASE_PASSWORD}
       NODE_ENV: ${NODE_ENV}
     volumes:
-      - ./config:/opt/app/config
-      - ./src:/opt/app/src
+      - ./config:/opt/app/apps/cms/config
+      - ./src:/opt/app/apps/cms/src
       - ./package.json:/opt/package.json
       - ./package-lock.json:/opt/package-lock.json
-      - ./.env:/opt/app/.env
-      - ./public/uploads:/opt/app/public/uploads
+      - ./.env:/opt/app/apps/cms/.env
+      - ./public/uploads:/opt/app/apps/cms/public/uploads
     ports:
       - "1337:1337"
     depends_on:

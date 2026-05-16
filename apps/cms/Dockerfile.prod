@@ -7,12 +7,13 @@ ARG NODE_ENV=production
 ENV NODE_ENV=${NODE_ENV}
 
 WORKDIR /opt/
-COPY package.json package-lock.json ./
+COPY apps/cms/package.json apps/cms/package-lock.json ./
 RUN npm install -g node-gyp
 RUN npm config set fetch-retry-maxtimeout 600000 -g && npm ci --only=production
 ENV PATH=/opt/node_modules/.bin:$PATH
 WORKDIR /opt/app
 COPY . .
+WORKDIR /opt/app/apps/cms
 RUN npm run build
 
 # Creating final production image
@@ -20,11 +21,11 @@ FROM node:22-alpine
 RUN apk add --no-cache vips-dev
 ARG NODE_ENV=production
 ENV NODE_ENV=${NODE_ENV}
-WORKDIR /opt/app
+WORKDIR /opt/app/apps/cms
 
 # Add chown for faster build times
-COPY --chown=node:node --from=build /opt/node_modules ./node_modules
-COPY --chown=node:node --from=build /opt/app ./
+COPY --chown=node:node --from=build /opt/node_modules /opt/node_modules
+COPY --chown=node:node --from=build /opt/app /opt/app
 
 ENV PATH=/opt/node_modules/.bin:$PATH
 
