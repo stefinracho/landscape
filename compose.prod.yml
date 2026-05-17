@@ -1,54 +1,64 @@
 services:
   web:
-    container_name: web
+    image: web:latest
     build:
       context: .
       dockerfile: apps/web/Dockerfile
-    restart: always
+    container_name: web
+    depends_on:
+      - cms
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=production
-    depends_on:
-      - cms
+      NODE_ENV: "production"
+      PORT: "3000"
+    restart: unless-stopped
 
   cms:
-    container_name: cms
+    image: cms:latest
     build:
       context: .
       dockerfile: apps/cms/Dockerfile.prod
-    restart: always
-    command: npm run start
-    environment:
-      DATABASE_CLIENT: ${DATABASE_CLIENT}
-      DATABASE_HOST: ${DATABASE_HOST}
-      DATABASE_NAME: ${DATABASE_NAME}
-      DATABASE_USERNAME: ${DATABASE_USERNAME}
-      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
-      DATABASE_PORT: ${DATABASE_PORT}
-      JWT_SECRET: ${JWT_SECRET}
-      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET}
-      APP_KEYS: ${APP_KEYS}
-      API_TOKEN_SALT: ${API_TOKEN_SALT}
-      TRANSFER_TOKEN_SALT: ${TRANSFER_TOKEN_SALT}
-      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
-      NODE_ENV: ${NODE_ENV}
-    ports:
-      - "1337:1337"
+    container_name: cms
     depends_on:
       postgres-db:
         condition: service_healthy
+    environment:
+      # Database
+      DATABASE_CLIENT: ${DATABASE_CLIENT}
+      DATABASE_HOST: ${DATABASE_HOST}
+      DATABASE_NAME: ${DATABASE_NAME}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_PORT: ${DATABASE_PORT}
+      DATABASE_SSL: ${DATABASE_SSL}
+      DATABASE_USERNAME: ${DATABASE_USERNAME}
+      # Other
+      NODE_ENV: "production"
+      STRAPI_TELEMETRY_DISABLED: "true"
+      # Secrets
+      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET}
+      API_TOKEN_SALT: ${API_TOKEN_SALT}
+      APP_KEYS: ${APP_KEYS}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+      TRANSFER_TOKEN_SALT: ${TRANSFER_TOKEN_SALT}
+      # Server
+      HOST: ${HOST}
+      PORT: ${PORT}
+    ports:
+      - "1337:1337"
+    restart: unless-stopped
 
   postgres-db:
+    image: postgres:16.4-alpine
     container_name: postgres-db
-    image: postgres:14.5-alpine
-    restart: always
     environment:
-      POSTGRES_USER: ${DATABASE_USERNAME}
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
       POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_USER: ${DATABASE_USERNAME}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
     healthcheck:
       test:
         ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME} -d ${DATABASE_NAME}"]

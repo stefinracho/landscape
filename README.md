@@ -28,54 +28,77 @@ npm install
 
 #### 2. Configure Environment Variables
 
-You need to setup the environment for the backend CMS. From the monorepo root, navigate to the CMS and copy the template:
+You need to setup the environment for the backend CMS. From the monorepo root, copy the template:
 
 ```sh
-cd apps/cms
+cp apps/cms/.env.example apps/cms/.env
 ```
+
+> [!NOTE]
+> The default values in `apps/cms/.env.example` are pre-configured to work out-of-the-box for local development. No manual changes are required.
+
+#### 3. Start the Backend (Strapi + PostgreSQL)
+
+We run the backend and database inside Docker to ensure environment parity across all developer machines. Start the containers:
+
+```sh
+npm run dev:cms
+```
+
+*(Leave this terminal running to view the backend logs. To stop the server later, press `Ctrl + C`)*
+
+**Strapi Admin Panel:** http://localhost:1337/admin
+
+> [!NOTE]
+> On your first boot, Strapi will prompt you to register a local Admin user.
+
+##### Data Workflow (Worktrees & Production)
+
+We use a single shared local database across all git worktrees (configured via `COMPOSE_PROJECT_NAME=landscape_local`). This means your local dummy data persists when switching branches. Later in the project, we will use `strapi transfer` to periodically pull real content from the production AWS server down to our local machines.
+
+#### 4. Start the Frontend (Next.js)
+
+Open a second terminal tab or split pane at the monorepo root and start the web app:
+
+```sh
+npm run dev:web
+```
+
+*(Leave this terminal running to view the frontend logs. To stop the server later, press `Ctrl + C`)*
+
+**Web App:** http://localhost:3000
+
+### Test Production Build
+
+If you want to test the production build locally, do **Step 1** from **Setup Development Environment**, then do the following steps.
+
+#### 1. Configure Environment Variables
+
+You need to set up the production environment variables. From the monorepo root, copy the template:
 
 ```sh
 cp .env.example .env
 ```
 
-> [!NOTE]
-> The default values in `.env.example` are pre-configured to work out-of-the-box for local development. No manual changes are required.
+#### 2. Start the Backend and Frontend (Strapi + PostgreSQL + NextJS)
 
-#### 3. Start the Backend (Strapi + PostgreSQL)
-
-We run the backend and database inside Docker to ensure environment parity across all developer machines. While still inside the `apps/cms` directory, start the containers:
+Build all containers and run them in the background:
 
 ```sh
-docker compose up -d
+npm run prod:up
 ```
 
+Once the containers are running, you can access the applications at:
+- Web App: http://localhost:3000
 - Strapi Admin Panel: http://localhost:1337/admin
 
-> [!NOTE]
-> On your first boot, Strapi will prompt you to register a local Admin user.
+#### 3. Stop the Backend and Frontend (Strapi + PostgreSQL + NextJS)
 
-#### 4. Start the Frontend (Next.js)
-
-Open a new terminal tab at the monorepo root. Because we are using npm workspaces, you can target the web app directly from the root without needing to change directories:
+When you're done testing, teardown all containers:
 
 ```sh
-npm run dev --workspace=web
+docker compose -f compose.prod.yml down
 ```
 
-- Web App: http://localhost:3000
-
-### Teardown Development Environment
-
-Follow these steps to teardown your development environment.
-
-#### Stop the Backend (Strapi + PostgreSQL)
-
-To stop the backend and remove the containers, run the following from the `apps/cms` directory:
-
-```sh
-docker compose down
-```
-
-#### Stop the Frontend (Next.js)
-
-To stop the frontend, simply press `Ctrl + C` in your terminal.
+> [!WARNING]  
+> **To completely reset the production database locally:** run `docker compose -f compose.prod.yml down -v`. The `-v` flag permanently deletes the database volume. **NEVER** run the `-v` flag on the actual production server.
