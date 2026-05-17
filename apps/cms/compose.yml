@@ -1,0 +1,62 @@
+services:
+  cms:
+    image: cms:latest
+    build:
+      context: ../../
+      dockerfile: apps/cms/Dockerfile
+    container_name: cms
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    environment:
+      # Database
+      DATABASE_CLIENT: ${DATABASE_CLIENT}
+      DATABASE_HOST: ${DATABASE_HOST}
+      DATABASE_NAME: ${DATABASE_NAME}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_PORT: ${DATABASE_PORT}
+      DATABASE_SSL: ${DATABASE_SSL}
+      DATABASE_USERNAME: ${DATABASE_USERNAME}
+      # Other
+      NODE_ENV: "development"
+      STRAPI_TELEMETRY_DISABLED: "true"
+      # Secrets
+      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET}
+      API_TOKEN_SALT: ${API_TOKEN_SALT}
+      APP_KEYS: ${APP_KEYS}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+      TRANSFER_TOKEN_SALT: ${TRANSFER_TOKEN_SALT}
+      # Server
+      HOST: ${HOST}
+      PORT: ${PORT}
+    volumes:
+      - ./config:/opt/app/apps/cms/config
+      - ./src:/opt/app/apps/cms/src
+      - ./package.json:/opt/package.json
+      - ./package-lock.json:/opt/package-lock.json
+      - ./.env:/opt/app/apps/cms/.env
+      - ./public/uploads:/opt/app/apps/cms/public/uploads
+    ports:
+      - "1337:1337"
+    restart: unless-stopped
+
+  postgres-db:
+    image: postgres:16.4-alpine
+    container_name: postgres-db
+    environment:
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME} -d ${DATABASE_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

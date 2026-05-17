@@ -3,5 +3,10 @@
   "private": true,
   "workspaces": [
     "apps/*"
-  ]
+  ],
+  "scripts": {
+    "dev:cms": "cd apps/cms && docker compose up --build",
+    "dev:web": "cd apps/web && npm run dev",
+    "prod:up": "docker compose -f compose.prod.yml up --build -d"
+  }
 }
